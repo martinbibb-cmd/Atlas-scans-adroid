@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -97,12 +98,21 @@ fun AtlasScansApp(viewModel: SessionViewModel) {
     val pagerState: PagerState = rememberPagerState { TABS.size }
     val scope = rememberCoroutineScope()
 
-    // Shared ARCore session – created once, passed to pages that need it.
-    // Created lazily after permissions are granted.
+    val context = LocalContext.current
+
+    // Shared ARCore session – created once permissions are granted.
+    // Each individual screen that needs AR still does its own availability
+    // check (ArSessionManager throws if the device is unsupported).
     val arSession: ArSessionManager? = remember(permissionsState.allPermissionsGranted) {
         if (permissionsState.allPermissionsGranted) {
-            runCatching { null /* created inside ScanScreen via AndroidView context */ }.getOrNull()
-        } else null
+            runCatching { ArSessionManager(context) }.getOrNull()
+        } else {
+            null
+        }
+    }
+
+    DisposableEffect(arSession) {
+        onDispose { arSession?.onDestroy() }
     }
 
     LaunchedEffect(Unit) {
@@ -151,7 +161,7 @@ fun AtlasScansApp(viewModel: SessionViewModel) {
                 beyondBoundsPageCount = 1,
             ) { page ->
                 when (page) {
-                    0 -> ScanScreen(viewModel = viewModel)
+                    0 -> ScanScreen(viewModel = viewModel, arSession = arSession)
                     1 -> PhotoCaptureScreen(viewModel = viewModel, arSession = arSession)
                     2 -> VoiceNoteScreen(viewModel = viewModel)
                     3 -> SummaryScreen(viewModel = viewModel)

@@ -2,14 +2,12 @@ package com.atlasscans.android.ui.screens
 
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.view.MotionEvent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -18,7 +16,6 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.atlasscans.android.R
 import com.atlasscans.android.data.models.CapturedRoomScanV2
-import com.atlasscans.android.utils.ArCoreConverter
 import com.atlasscans.android.utils.ArSessionManager
 import com.atlasscans.android.viewmodel.SessionViewModel
 import kotlinx.coroutines.delay
@@ -34,10 +31,12 @@ import kotlinx.coroutines.isActive
  * The user taps "Start Scan", moves the device around the room, then taps
  * "Stop Scan".  The accumulated point cloud and planes are converted via
  * [ArCoreConverter] and handed to [SessionViewModel.setRoomScan].
+ *
+ * @param arSession Shared [ArSessionManager] from the host Activity. Null when
+ *   the device does not support ARCore or permissions have not been granted yet.
  */
 @Composable
-fun ScanScreen(viewModel: SessionViewModel) {
-    val context = LocalContext.current
+fun ScanScreen(viewModel: SessionViewModel, arSession: ArSessionManager?) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // UI state
@@ -46,11 +45,9 @@ fun ScanScreen(viewModel: SessionViewModel) {
     var planeCount by remember { mutableIntStateOf(0) }
     var pointCount by remember { mutableIntStateOf(0) }
     var elapsedSeconds by remember { mutableFloatStateOf(0f) }
-    val session: ArSessionManager? = remember(context) {
-        runCatching { ArSessionManager(context) }.getOrNull()
-    }
-    // Derive AR availability from the session (null means unsupported or error)
-    val arUnavailable = session == null
+
+    // Derive AR availability from the shared session
+    val arUnavailable = arSession == null
 
     // Elapsed-time ticker while scanning
     LaunchedEffect(isScanning) {
@@ -58,19 +55,18 @@ fun ScanScreen(viewModel: SessionViewModel) {
             val startMs = System.currentTimeMillis()
             while (isActive && isScanning) {
                 elapsedSeconds = (System.currentTimeMillis() - startMs) / 1_000f
-                planeCount = session?.trackedPlaneCount() ?: 0
-                pointCount = session?.collectedPointCount() ?: 0
+                planeCount = arSession?.trackedPlaneCount() ?: 0
+                pointCount = arSession?.collectedPointCount() ?: 0
                 delay(500)
             }
         }
     }
 
     // Lifecycle integration – pause/resume ARCore with the Activity
-    DisposableEffect(session, lifecycleOwner) {
+    DisposableEffect(arSession, lifecycleOwner) {
         val observer = object : DefaultLifecycleObserver {
-            override fun onResume(owner: LifecycleOwner) { session?.onResume() }
-            override fun onPause(owner: LifecycleOwner) { session?.onPause() }
-            override fun onDestroy(owner: LifecycleOwner) { session?.onDestroy() }
+            override fun onResume(owner: LifecycleOwner) { arSession?.onResume() }
+            override fun onPause(owner: LifecycleOwner) { arSession?.onPause() }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -91,7 +87,7 @@ fun ScanScreen(viewModel: SessionViewModel) {
             // AR camera preview embedded as an AndroidView
             AndroidView(
                 factory = { ctx: Context ->
-                    session?.createGlSurfaceView(ctx) ?: GLSurfaceView(ctx)
+                    arSession?.createGlSurfaceView(ctx) ?: GLSurfaceView(ctx)
                 },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -123,13 +119,13 @@ fun ScanScreen(viewModel: SessionViewModel) {
                 Button(
                     onClick = {
                         if (!isScanning) {
-                            session?.startScan()
+                            arSession?.startScan()
                             isScanning = true
                             scanComplete = false
                         } else {
                             isScanning = false
-                            session?.stopScan()
-                            val roomScan: CapturedRoomScanV2? = session?.buildRoomScan(elapsedSeconds)
+                            arSession?.stopScan()
+                            val roomScan: CapturedRoomScanV2? = arSession?.buildRoomScan(elapsedSeconds)
                             roomScan?.let { viewModel.setRoomScan(it) }
                             scanComplete = roomScan != null
                         }

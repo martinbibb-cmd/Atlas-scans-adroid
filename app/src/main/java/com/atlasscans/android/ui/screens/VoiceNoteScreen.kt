@@ -272,8 +272,9 @@ private fun startRecording(
             val words = results
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull() ?: return
-            accumulated.append(" $words")
-            onPartialResult(accumulated.toString().trim())
+            if (accumulated.isNotEmpty()) accumulated.append(' ')
+            accumulated.append(words)
+            onPartialResult(accumulated.toString())
             // Restart for continuous recognition
             recognizer.startListening(buildRecognitionIntent())
         }
@@ -282,7 +283,8 @@ private fun startRecording(
             val partial = partialResults
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull() ?: return
-            onPartialResult((accumulated.toString() + " " + partial).trim())
+            val base = if (accumulated.isNotEmpty()) "$accumulated " else ""
+            onPartialResult("$base$partial")
         }
 
         override fun onError(error: Int) {

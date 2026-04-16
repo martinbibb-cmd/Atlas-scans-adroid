@@ -98,6 +98,7 @@ object ArCoreConverter {
             Plane.Type.HORIZONTAL_UPWARD_FACING   -> "HORIZONTAL_UP"
             Plane.Type.HORIZONTAL_DOWNWARD_FACING -> "HORIZONTAL_DOWN"
             Plane.Type.VERTICAL                   -> "VERTICAL"
+            else                                  -> "UNKNOWN"
         }
         return DetectedPlane(
             id = UUID.randomUUID().toString(),

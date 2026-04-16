@@ -42,10 +42,7 @@ class SessionViewModel(
         // Restore any persisted draft from the database on first launch.
         viewModelScope.launch {
             repository.observeDraft().collect { draft ->
-                if (draft != null && draft.id == _session.value.id) {
-                    _session.value = draft
-                } else if (draft != null) {
-                    // Restore a previously interrupted session.
+                if (draft != null) {
                     _session.value = draft
                 }
             }
