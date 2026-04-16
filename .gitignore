@@ -1,0 +1,19 @@
+# Android build outputs
+.gradle/
+build/
+app/build/
+app/release/
+*.apk
+*.aab
+*.keystore
+
+# IDE files
+.idea/
+*.iml
+.DS_Store
+
+# Local configuration
+local.properties
+
+# Generated
+app/src/main/java/com/atlasscans/android/BuildConfig.kt
