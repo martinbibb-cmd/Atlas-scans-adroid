@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ViewInAr
@@ -29,6 +30,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.atlasscans.android.data.database.AppDatabase
 import com.atlasscans.android.data.repository.SessionRepository
+import com.atlasscans.android.ui.screens.AlignmentViewPanel
 import com.atlasscans.android.ui.screens.PhotoCaptureScreen
 import com.atlasscans.android.ui.screens.ScanScreen
 import com.atlasscans.android.ui.screens.SummaryScreen
@@ -41,11 +43,12 @@ import kotlinx.coroutines.launch
 /**
  * Single-activity host for the Atlas Scans Android app.
  *
- * Uses a [HorizontalPager] with four pages:
+ * Uses a [HorizontalPager] with five pages:
  * 1. Room Scan (ARCore depth + plane detection)
  * 2. Photo Capture (CameraX + optional ARCore pin drop)
  * 3. Voice Note (MediaRecorder + SpeechRecognizer)
  * 4. Summary & Export
+ * 5. Structure View (Spatial Alignment – 2-D side/top view + insights)
  *
  * The [SessionViewModel] is scoped to this Activity so session state survives
  * configuration changes and page swipes.
@@ -89,6 +92,7 @@ private val TABS = listOf(
     TabItem(R.string.tab_photo, Icons.Default.CameraAlt),
     TabItem(R.string.tab_voice, Icons.Default.Mic),
     TabItem(R.string.tab_summary, Icons.Default.List),
+    TabItem(R.string.tab_alignment, Icons.Default.Layers),
 )
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalPermissionsApi::class)
@@ -165,6 +169,7 @@ fun AtlasScansApp(viewModel: SessionViewModel) {
                     1 -> PhotoCaptureScreen(viewModel = viewModel, arSession = arSession)
                     2 -> VoiceNoteScreen(viewModel = viewModel)
                     3 -> SummaryScreen(viewModel = viewModel)
+                    4 -> AlignmentViewPanel(viewModel = viewModel)
                 }
             }
         }

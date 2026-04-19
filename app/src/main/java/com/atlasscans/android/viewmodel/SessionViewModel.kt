@@ -6,11 +6,14 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlasscans.android.data.models.AtlasAnchor
+import com.atlasscans.android.data.models.AtlasSpatialModelV1
 import com.atlasscans.android.data.models.CapturedPhotoV2
 import com.atlasscans.android.data.models.CapturedRoomScanV2
 import com.atlasscans.android.data.models.SessionCaptureV2
 import com.atlasscans.android.data.models.VoiceNoteV2
 import com.atlasscans.android.data.repository.SessionRepository
+import com.atlasscans.android.features.spatialalignment.SpatialAlignmentEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,6 +91,50 @@ class SessionViewModel(
     /** Remove a voice note by id. */
     fun removeVoiceNote(noteId: String) {
         _session.update { it.copy(voiceNotes = it.voiceNotes.filter { n -> n.id != noteId }) }
+        persistDraft()
+    }
+
+    // -------------------------------------------------------------------------
+    // Spatial Alignment
+    // -------------------------------------------------------------------------
+
+    /**
+     * Add or replace an [AtlasAnchor] in the session's spatial model.
+     *
+     * If an anchor with the same [AtlasAnchor.id] already exists it is
+     * replaced, otherwise the anchor is appended.  After every mutation the
+     * vertical relations are re-derived automatically so the Structure View
+     * stays consistent.
+     */
+    fun upsertAnchor(anchor: AtlasAnchor) {
+        _session.update { session ->
+            val model = session.spatialModel ?: AtlasSpatialModelV1()
+            val updatedAnchors = model.anchors
+                .filterNot { it.id == anchor.id } + anchor
+            val updatedModel = model.copy(
+                anchors = updatedAnchors,
+                verticalRelations = SpatialAlignmentEngine.deriveVerticalRelations(
+                    model.copy(anchors = updatedAnchors)
+                ),
+            )
+            session.copy(spatialModel = updatedModel)
+        }
+        persistDraft()
+    }
+
+    /** Remove the anchor with [anchorId] and re-derive vertical relations. */
+    fun removeAnchor(anchorId: String) {
+        _session.update { session ->
+            val model = session.spatialModel ?: return@update session
+            val updatedAnchors = model.anchors.filter { it.id != anchorId }
+            val updatedModel = model.copy(
+                anchors = updatedAnchors,
+                verticalRelations = SpatialAlignmentEngine.deriveVerticalRelations(
+                    model.copy(anchors = updatedAnchors)
+                ),
+            )
+            session.copy(spatialModel = updatedModel)
+        }
         persistDraft()
     }
 
