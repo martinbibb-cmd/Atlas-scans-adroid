@@ -4,6 +4,7 @@
     <string name="tab_photo">Photo Capture</string>
     <string name="tab_voice">Voice Note</string>
     <string name="tab_summary">Summary</string>
+    <string name="tab_alignment">Structure View</string>
     <string name="btn_start_scan">Start Scan</string>
     <string name="btn_stop_scan">Stop Scan</string>
     <string name="btn_capture_photo">Capture Photo</string>
@@ -12,6 +13,9 @@
     <string name="btn_stop_recording">Stop Recording</string>
     <string name="btn_export">Export Session</string>
     <string name="btn_new_session">New Session</string>
+    <string name="btn_add_anchor">Add Anchor</string>
+    <string name="btn_remove_anchor">Remove Anchor</string>
+    <string name="btn_cancel">Cancel</string>
     <string name="arcore_not_supported">This device does not support ARCore. Room scanning will be unavailable.</string>
     <string name="permission_required">Camera, microphone, and location permissions are required for full functionality.</string>
     <string name="scanning_in_progress">Scanning room…</string>
@@ -19,4 +23,19 @@
     <string name="points_collected">%d points collected</string>
     <string name="scan_complete">Scan complete</string>
     <string name="session_exported">Session exported successfully</string>
+    <!-- Spatial Alignment / Structure View -->
+    <string name="title_structure_view">Structure View</string>
+    <string name="subtitle_structure_view">%d anchor(s) placed</string>
+    <string name="tab_side_view">Side View</string>
+    <string name="tab_top_view">Top View</string>
+    <string name="tab_insights">Insights</string>
+    <string name="empty_no_anchors">No anchors placed yet.\nTap + to add a boiler, cylinder, or other object.</string>
+    <string name="section_anchors">Anchors</string>
+    <string name="section_relationships">Vertical Relationships</string>
+    <string name="section_routing">Routing Estimates</string>
+    <string name="label_est_pipe_length">Estimated pipe run: %s m (inferred)</string>
+    <string name="label_inferred_warning">⚠ Inferred data – not confirmed measurement</string>
+    <string name="dialog_add_anchor_title">Add Anchor</string>
+    <string name="field_anchor_label">Label (e.g. Boiler, Cylinder)</string>
+    <string name="hint_manual_anchor">Manually entered positions are marked as inferred. Use ARCore scan data for confirmed positions.</string>
 </resources>

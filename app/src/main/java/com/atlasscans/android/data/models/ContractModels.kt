@@ -2,6 +2,106 @@ package com.atlasscans.android.data.models
 
 import kotlinx.serialization.Serializable
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Spatial Alignment – AtlasSpatialModelV1
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Confidence level for a spatial position measurement. */
+@Serializable
+enum class AtlasPositionConfidence { confirmed, inferred }
+
+/** Source of a spatial position reading. */
+@Serializable
+enum class AtlasPositionSource { lidar, manual, derived }
+
+/**
+ * Absolute world-space position in metres on the local site grid.
+ *
+ * Right-handed coordinate system matching ARCore:
+ * - x = right
+ * - y = up (height above the scan origin)
+ * - z = towards the camera at session start
+ */
+@Serializable
+data class AtlasWorldPosition(
+    val x: Double,
+    val y: Double,
+    /** Vertical axis – height above the scan origin in metres. */
+    val z: Double,
+    val confidence: AtlasPositionConfidence,
+    val source: AtlasPositionSource,
+)
+
+/**
+ * A labelled object of interest (boiler, cylinder, consumer unit, etc.)
+ * anchored at a known world position.
+ */
+@Serializable
+data class AtlasAnchor(
+    /** Unique identifier (UUID v4). */
+    val id: String,
+    /** Human-readable label, e.g. "boiler", "cylinder", "consumer_unit". */
+    val label: String,
+    val worldPosition: AtlasWorldPosition,
+    /** Optional room this anchor belongs to. */
+    val roomId: String? = null,
+)
+
+/**
+ * Vertical spatial relationship between two anchors.
+ *
+ * [relation] values: "above" | "below" | "same_level"
+ */
+@Serializable
+data class AtlasVerticalRelation(
+    val fromAnchorId: String,
+    val toAnchorId: String,
+    val verticalDistanceM: Double,
+    /** "above", "below", or "same_level" from the perspective of [fromAnchorId]. */
+    val relation: String,
+)
+
+/**
+ * An inferred pipe, cable, or flue route through world space.
+ *
+ * SAFETY: [confidence] is always "inferred". Never render inferred routes as
+ * confirmed measurements. Always expose [reason] in the UI.
+ */
+@Serializable
+data class AtlasInferredRoute(
+    /** Unique identifier (UUID v4). */
+    val id: String,
+    /** "pipe", "cable", or "flue". */
+    val type: String,
+    /** Ordered world-space waypoints describing the route. */
+    val path: List<AtlasWorldPosition>,
+    /** Always "inferred" – never promote to confirmed without physical measurement. */
+    val confidence: String = "inferred",
+    /** Human-readable explanation of why this route was inferred. */
+    val reason: String,
+)
+
+/** Optional geo-reference for the building scan origin. */
+@Serializable
+data class AtlasBuildingOrigin(
+    val lat: Double? = null,
+    val lng: Double? = null,
+)
+
+/**
+ * Spatial model for the current site – anchors, vertical relationships,
+ * and inferred routing paths.
+ *
+ * This is the ground-truth spatial layer consumed by the SpatialAlignmentEngine.
+ */
+@Serializable
+data class AtlasSpatialModelV1(
+    val anchors: List<AtlasAnchor> = emptyList(),
+    val verticalRelations: List<AtlasVerticalRelation> = emptyList(),
+    val inferredRoutes: List<AtlasInferredRoute> = emptyList(),
+    val buildingOrigin: AtlasBuildingOrigin = AtlasBuildingOrigin(),
+)
+
 /**
  * 3-D coordinate in metres, right-handed (ARCore native convention).
  * Matches the spatial coordinate format required by AtlasContracts.
@@ -108,4 +208,9 @@ data class SessionCaptureV2(
     val photos: List<CapturedPhotoV2>,
     /** All voice notes captured during the session. */
     val voiceNotes: List<VoiceNoteV2>,
+    /**
+     * Spatial model for this site – anchors, vertical relationships, and
+     * inferred routing. Null until the engineer begins placing anchors.
+     */
+    val spatialModel: AtlasSpatialModelV1? = null,
 )
