@@ -114,14 +114,8 @@ class SpatialAlignmentEngineTest {
             screenWidthPx = 1080,
             screenHeightPx = 1920,
         )
-        // Target is behind the camera (same z = behind for localZ <= 0 after yaw=0)
-        val behind = confirmedPosition(0.0, 0.0, 5.0)   // localZ = +5 after rotation
-        // With yaw = 0: localZ = dx*sin(0) + dz*cos(0) = dz = +5 → in front!
-        // To place behind: use negative z offset = z < camera z → localZ < 0
-        val behindCam = confirmedPosition(0.0, 0.0, -5.0)
-        // localZ = -(-5) = 5? Let me recalculate: dx=0, dz=behindCam.z - camera.z = -5
-        // localX = 0*cos(0) - (-5)*sin(0) = 0; localZ = 0*sin(0) + (-5)*cos(0) = -5
-        val result = SpatialAlignmentEngine.projectToViewPlane(pose, behindCam)
+        // dz = -5 - 0 = -5; localZ = 0*sin(0) + (-5)*cos(0) = -5 ≤ 0 → behind camera
+        val result = SpatialAlignmentEngine.projectToViewPlane(pose, confirmedPosition(0.0, 0.0, -5.0))
         assertNull(result)
     }
 

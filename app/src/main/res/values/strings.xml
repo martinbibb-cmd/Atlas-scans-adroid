@@ -14,7 +14,7 @@
     <string name="btn_export">Export Session</string>
     <string name="btn_new_session">New Session</string>
     <string name="btn_add_anchor">Add Anchor</string>
-    <string name="btn_remove_anchor">Remove anchor</string>
+    <string name="btn_remove_anchor">Remove Anchor</string>
     <string name="btn_cancel">Cancel</string>
     <string name="arcore_not_supported">This device does not support ARCore. Room scanning will be unavailable.</string>
     <string name="permission_required">Camera, microphone, and location permissions are required for full functionality.</string>
